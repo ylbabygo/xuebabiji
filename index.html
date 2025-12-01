@@ -506,7 +506,7 @@
                 // 方法 3: 硬编码临时解决方案
                 else {
                     supabaseUrl = 'https://ddttfkymbudozwkixdyg.supabase.co';
-                    supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRkdHRma3ltYnVkb3d3a2l4ZHlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzM3MTc1MTEsImV4cCI6MjA0OTI5MzUxMX0.wYJ2zQgJlCuKFYFvLxIFJ0xsBVD6-JJdGOuJ-iMVdgI';
+                    supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRkdHRma3ltYnVkb3p3a2l4ZHlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NzMxMzMsImV4cCI6MjA4MDE0OTEzM30.yjZTQQ4b_CCTXoLrnxJZ5bdPVuPYDHhihaD1Mr7RL9s';
                     console.log('使用硬编码配置');
                 }
 
@@ -896,7 +896,7 @@
                 if (!supabaseUrl || supabaseUrl === 'YOUR_SUPABASE_URL') {
                     console.warn('使用硬编码的 Supabase 配置');
                     supabaseUrl = 'https://ddttfkymbudozwkixdyg.supabase.co';
-                    supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRkdHRma3ltYnVkb3d3a2l4ZHlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzM3MTc1MTEsImV4cCI6MjA0OTI5MzUxMX0.wYJ2zQgJlCuKFYFvLxIFJ0xsBVD6-JJdGOuJ-iMVdgI';
+                    supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRkdHRma3ltYnVkb3p3a2l4ZHlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NzMxMzMsImV4cCI6MjA4MDE0OTEzM30.yjZTQQ4b_CCTXoLrnxJZ5bdPVuPYDHhihaD1Mr7RL9s';
                 }
 
                 if (!supabaseKey) {
@@ -910,13 +910,24 @@
                 // 直接使用 REST API 写入数据库，避免 Edge Function CORS 问题
                 const claimRecord = {
                     ip_address: userIP,
-                    user_agent: navigator.userAgent,
-                    claimed_version: version,
-                    device_fingerprint: StorageManager.generateDeviceFingerprint(),
-                    session_id: sessionStorage.getItem('sessionId') || generateSessionId()
+                    claimed_version: version
                 };
 
+                // 可选字段
+                if (navigator.userAgent) {
+                    claimRecord.user_agent = navigator.userAgent;
+                }
+                const fingerprint = StorageManager.generateDeviceFingerprint();
+                if (fingerprint) {
+                    claimRecord.device_fingerprint = fingerprint;
+                }
+                const sessionId = sessionStorage.getItem('sessionId') || generateSessionId();
+                if (sessionId) {
+                    claimRecord.session_id = sessionId;
+                }
+
                 console.log('写入记录到 claim_records 表:', claimRecord);
+                console.log('JSON 字符串:', JSON.stringify(claimRecord));
 
                 const response = await fetch(`${supabaseUrl}/rest/v1/claim_records`, {
                     method: 'POST',
