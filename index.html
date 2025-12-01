@@ -852,12 +852,36 @@
         // 调用 Supabase Edge Function
         async function callSupabaseFunction(version, userIP) {
             try {
-                const supabaseUrl = process.env?.NEXT_PUBLIC_SUPABASE_URL || window.ENV?.SUPABASE_URL;
-                const supabaseKey = process.env?.NEXT_PUBLIC_SUPABASE_ANON_KEY || window.ENV?.SUPABASE_ANON_KEY;
+                // 尝试多种方式获取环境变量
+                let supabaseUrl = null;
+                let supabaseKey = null;
 
-                if (!supabaseUrl || !supabaseKey || supabaseUrl === 'YOUR_SUPABASE_URL') {
-                    return { success: false, error: 'Supabase 未配置' };
+                // 方法 1: Vercel 环境变量
+                if (typeof process !== 'undefined' && process.env) {
+                    supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+                    supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
                 }
+
+                // 方法 2: window.ENV (如果存在)
+                if ((!supabaseUrl || supabaseUrl === 'YOUR_SUPABASE_URL') && window.ENV) {
+                    supabaseUrl = window.ENV.SUPABASE_URL;
+                    supabaseKey = window.ENV.SUPABASE_ANON_KEY;
+                }
+
+                // 方法 3: 硬编码你的 Supabase 配置（临时方案）
+                if (!supabaseUrl || supabaseUrl === 'YOUR_SUPABASE_URL') {
+                    console.warn('使用硬编码的 Supabase 配置');
+                    supabaseUrl = 'https://ddttfkymbudozwkixdyg.supabase.co';
+                    supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRkdHRma3ltYnVkb3p3a2l4ZHlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NzMxMzMsImV4cCI6MjA4MDE0OTEzM30.yjZTQQ4b_CCTXoLrnxJZ5bdPVuPYDHhihaD1Mr7RL9s';
+                }
+
+                if (!supabaseKey) {
+                    return { success: false, error: 'Supabase 密钥未配置' };
+                }
+
+                console.log('调用 Supabase 函数，版本:', version, 'IP:', userIP);
+                console.log('Supabase URL:', supabaseUrl);
+                console.log('Supabase Key length:', supabaseKey.length);
 
                 console.log('调用 Supabase 函数，版本:', version, 'IP:', userIP);
 
