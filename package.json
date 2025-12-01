@@ -2,12 +2,12 @@
   "name": "51talk-promotional-page",
   "version": "1.0.0",
   "description": "51Talk 小学英语学霸笔记免费领取活动页面",
-  "main": "index.html",
+  "main": "public/index.html",
   "scripts": {
-    "start": "python -m http.server 8000",
-    "dev": "python -m http.server 8000",
-    "build": "echo '✅ Static site build complete'",
-    "preview": "python -m http.server 8000"
+    "start": "python -m http.server 8000 --directory public",
+    "dev": "python -m http.server 8000 --directory public",
+    "build": "echo '✅ Static site build complete - Output directory: public'",
+    "preview": "python -m http.server 8000 --directory public"
   },
   "keywords": [
     "51talk",
