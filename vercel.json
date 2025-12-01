@@ -1,45 +1,11 @@
 {
   "version": 2,
   "name": "51talk-promotional-page",
-  "builds": [
-    {
-      "src": "index.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "css/**/*",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "js/**/*",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "assets/**/*",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/css/(.*)",
-      "dest": "/css/$1"
-    },
-    {
-      "src": "/js/(.*)",
-      "dest": "/js/$1"
-    },
-    {
-      "src": "/assets/(.*)",
-      "dest": "/assets/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
-  ],
+  "cleanUrls": true,
+  "trailingSlash": false,
   "headers": [
     {
-      "source": "/css/(.*)",
+      "source": "/css/(.*\\.(css|scss|sass))",
       "headers": [
         {
           "key": "Cache-Control",
@@ -48,7 +14,7 @@
       ]
     },
     {
-      "source": "/js/(.*)",
+      "source": "/js/(.*\\.(js|mjs|ts))",
       "headers": [
         {
           "key": "Cache-Control",
@@ -57,7 +23,7 @@
       ]
     },
     {
-      "source": "/assets/(.*)",
+      "source": "/assets/(.*\\.(png|jpg|jpeg|gif|svg|ico))",
       "headers": [
         {
           "key": "Cache-Control",
