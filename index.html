@@ -481,10 +481,64 @@
         // 服务器端限制检查
         async function checkServerRestriction(ip) {
             try {
-                // 这里可以连接到你的服务器或第三方服务检查 IP 限制
-                // 暂时返回不限制
-                return { restricted: false };
+                const supabaseUrl = process.env?.NEXT_PUBLIC_SUPABASE_URL || window.ENV?.SUPABASE_URL;
+                const supabaseKey = process.env?.NEXT_PUBLIC_SUPABASE_ANON_KEY || window.ENV?.SUPABASE_ANON_KEY;
+
+                console.log('Supabase URL:', supabaseUrl);
+                console.log('Supabase Key present:', !!supabaseKey);
+
+                if (!supabaseUrl || !supabaseKey || supabaseUrl === 'YOUR_SUPABASE_URL') {
+                    console.log('Supabase 未配置，跳过服务器限制');
+                    return { restricted: false };
+                }
+
+                const response = await fetch(`${supabaseUrl}/functions/v1/validate-claim`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${supabaseKey}`
+                    },
+                    body: JSON.stringify({
+                        version: 'check',
+                        userAgent: navigator.userAgent,
+                        deviceFingerprint: StorageManager.generateDeviceFingerprint(),
+                        sessionId: sessionStorage.getItem('sessionId') || generateSessionId()
+                    })
+                });
+
+                console.log('Supabase response status:', response.status);
+                const responseText = await response.text();
+                console.log('Supabase response:', responseText);
+
+                if (!response.ok) {
+                    try {
+                        const errorData = JSON.parse(responseText);
+                        return {
+                            restricted: true,
+                            reason: 'server_error',
+                            message: errorData.error || '服务器验证失败',
+                            details: errorData
+                        };
+                    } catch (parseError) {
+                        return {
+                            restricted: true,
+                            reason: 'server_error',
+                            message: `服务器错误 (${response.status}): ${responseText}`,
+                            details: { status: response.status, text: responseText }
+                        };
+                    }
+                }
+
+                const result = JSON.parse(responseText);
+                return {
+                    restricted: !result.success,
+                    reason: result.type || null,
+                    message: result.error || null,
+                    details: result
+                };
+
             } catch (error) {
+                console.warn('服务器限制检查失败:', error);
                 return { restricted: false };
             }
         }
@@ -763,10 +817,16 @@
                 // 获取用户 IP
                 const userIP = await getUserIP();
 
-                // 模拟网络处理时间
-                await new Promise(resolve => setTimeout(resolve, 1500));
+                // 尝试调用 Supabase Edge Function
+                const supabaseResult = await callSupabaseFunction(selectedVersion, userIP);
 
-                // 记录领取数据
+                if (supabaseResult.success) {
+                    console.log('Supabase 记录成功:', supabaseResult);
+                } else {
+                    console.warn('Supabase 记录失败，使用本地存储:', supabaseResult.error);
+                }
+
+                // 本地数据统计
                 const claimData = recordClaimData(selectedVersion, userIP, navigator.userAgent);
 
                 // 保存设备限制信息
@@ -777,7 +837,7 @@
                 // 显示成功信息
                 showSuccessMessage(selectedVersion, versionData);
 
-                console.log('领取成功:', claimData);
+                console.log('领取成功:', { supabaseResult, localData: claimData });
 
             } catch (error) {
                 console.error('领取处理失败:', error);
@@ -786,6 +846,54 @@
                 // 重置状态
                 isProcessing = false;
                 updateClaimButton();
+            }
+        }
+
+        // 调用 Supabase Edge Function
+        async function callSupabaseFunction(version, userIP) {
+            try {
+                const supabaseUrl = process.env?.NEXT_PUBLIC_SUPABASE_URL || window.ENV?.SUPABASE_URL;
+                const supabaseKey = process.env?.NEXT_PUBLIC_SUPABASE_ANON_KEY || window.ENV?.SUPABASE_ANON_KEY;
+
+                if (!supabaseUrl || !supabaseKey || supabaseUrl === 'YOUR_SUPABASE_URL') {
+                    return { success: false, error: 'Supabase 未配置' };
+                }
+
+                console.log('调用 Supabase 函数，版本:', version, 'IP:', userIP);
+
+                const response = await fetch(`${supabaseUrl}/functions/v1/validate-claim`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${supabaseKey}`
+                    },
+                    body: JSON.stringify({
+                        version: version,
+                        userAgent: navigator.userAgent,
+                        deviceFingerprint: StorageManager.generateDeviceFingerprint(),
+                        sessionId: sessionStorage.getItem('sessionId') || generateSessionId()
+                    })
+                });
+
+                console.log('Supabase 函数响应状态:', response.status);
+                const responseText = await response.text();
+                console.log('Supabase 函数响应内容:', responseText);
+
+                if (response.ok) {
+                    const result = JSON.parse(responseText);
+                    return { success: true, data: result };
+                } else {
+                    try {
+                        const errorData = JSON.parse(responseText);
+                        return { success: false, error: errorData, status: response.status };
+                    } catch (parseError) {
+                        return { success: false, error: responseText, status: response.status };
+                    }
+                }
+
+            } catch (error) {
+                console.error('Supabase 函数调用错误:', error);
+                return { success: false, error: error.message };
             }
         }
 
