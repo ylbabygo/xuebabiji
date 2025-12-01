@@ -16,3 +16,6 @@ Thumbs.db
 
 # 忽略原始需求文档
 51Talk*
+
+# 重要：保留 assets 目录（包含 LOGO 图片）
+# assets/
