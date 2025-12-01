@@ -1,16 +1,5 @@
 {
   "version": 2,
-  "name": "51talk-promotional-page",
-  "outputDirectory": "public",
-  "installCommand": "npm install",
-  "buildCommand": "npm run build",
   "cleanUrls": true,
-  "trailingSlash": false,
-  "framework": null,
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ]
+  "trailingSlash": false
 }
